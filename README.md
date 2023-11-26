@@ -1,6 +1,7 @@
 # Bncr_plugins
 ## 企业微信对接方法
 企业微信网址 https://work.weixin.qq.com/  
+  
 1.创建企业微信账号，获取corpId（我的企业-企业信息-企业ID）  
 2.新建一个应用（应用管理-自建-创建应用），进入应用获取corpSecret（Secret）  
 3.应用内找“接收消息”-“启用api接收”，URL填“无界地址/api/bot/wxWork”，Token和EncodingAESKey随机生成并记录，先不要点“保存”  
