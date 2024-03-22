@@ -11,9 +11,9 @@
  * @priority 9999
  * @disable false
  */
-
+ 
 /*
-插件代码来自GitHub的某位大佬，本人仅修复bug和适配2.0界面
+插件代码来自GitHub的某位大佬，本人仅修复bug和适配无界2.0
 
 使用方法：将获取到的apiKey填入配置界面（获取方法请自行搜索），如后台提示"User location is not supported for the API use"，请尝试调整梯子
 */
