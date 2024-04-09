@@ -15,6 +15,7 @@
 /* 
 基于sumuen大佬的插件修改，主要是适配了2.0界面，按自己的使用习惯进行了一些调整，原插件在这里https://github.com/sumuen/Bncr_plugin/blob/main/Bncr_ChatGPT.js
 需要ApiKey，没有的可以看看这个项目https://github.com/aurora-develop/aurora
+记得同时下载mod文件夹下的prompts.json文件
 
 todo
 1.用更优雅的方式实现HumanTG的编辑回复和直接回复的切换
