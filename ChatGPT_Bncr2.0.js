@@ -2,7 +2,7 @@
  * @author Merrick
  * @name ChatGPT_BNCR2.0
  * @origin Merrick
- * @version 1.0.0
+ * @version 1.0.1
  * @description ChatGpt聊天，适配无界2.0
  * @rule ^(ai) ([\s\S]+)$
  * @rule ^(ai)$
@@ -15,7 +15,8 @@
 /* 
 基于sumuen大佬的插件修改，主要是适配了2.0界面，按自己的使用习惯进行了一些调整，原插件在这里https://github.com/sumuen/Bncr_plugin/blob/main/Bncr_ChatGPT.js
 需要ApiKey，没有的可以看看这个项目https://github.com/aurora-develop/aurora
-记得同时下载mod文件夹下的prompts.json文件
+
+v1.0.1 修复了QQ和微信平台在编辑模式下不能正常回复的bug
 
 todo
 1.用更优雅的方式实现HumanTG的编辑回复和直接回复的切换
@@ -83,8 +84,7 @@ module.exports = async s => {
         let history = [{
             role: 'system', content: [{ type: "text", text: prompt + '，另外，输出字符限制，输出50-100字' }]
         }]
-        console.log(history[0].content[0].text);
-        await relpyMod(isEdit, `Let me see...`);
+        await relpyMod(s, isEdit, `Let me see...`);
         history.push({ role: 'user', content: [{ type: "text", text: s.param(2) }] });
         let response
         try {
@@ -97,12 +97,12 @@ module.exports = async s => {
             handleError(error);
             //如果错误信息包含OpenAI error 429，使用gpt3.5模型继续调用
             if (error.toString().indexOf('OpenAI error 429') !== -1) {
-                s.reply("gpt4模型调用失败，正在使用gpt3.5模型");
+                relpyMod("gpt4模型调用失败，正在使用gpt3.5模型");
                 api = initializeChatGPTAPI(apiKey, apiBaseUrl, 'gpt-3.5-turbo');
                 try {
                     response = await api.sendMessage(JSON.stringify(history), opt);
                     history.push({ role: 'assistant', content: [{ type: "text", text: response.text }] });
-                    await relpyMod(isEdit, response.text);
+                    await relpyMod(s, isEdit, response.text);
                     await continuousDialogue(api, opt);
                 }
                 catch (error) {
@@ -118,13 +118,13 @@ module.exports = async s => {
             while (true) {
                 let input = await s.waitInput(() => { }, 60);
                 if (!input) {
-                    await relpyMod(isEdit, '对话超时。');
+                    await relpyMod(s, isEdit, '对话超时。');
                     break;
                 }
 
                 input = input.getMsg();
                 if (input.toLowerCase() === 'q') {
-                    await relpyMod(isEdit, '对话结束。');
+                    await relpyMod(s, isEdit, '对话结束。');
                     break;
                 }
 
@@ -138,7 +138,7 @@ module.exports = async s => {
                     if (response) {
                         await handleResponse(response, history)
                     } else {
-                        await relpyMod(isEdit, '没有收到回答。');
+                        await relpyMod(s, isEdit, '没有收到回答。');
                     }
                 } catch (error) {
                     handleError(error);
@@ -148,14 +148,14 @@ module.exports = async s => {
         }
     }
 
-    async function relpyMod(isEdit, text) {
+    async function relpyMod(s, isEdit, text) {
         const userId = s.getUserId();
         const groupId = s.getGroupId();
         const platform = s.getFrom();
         if (isEdit) {
             await s.reply(text);
         } else {
-            if (groupId) {
+            if (groupId && groupId!=0) {
                 sysMethod.push({
                     platform: platform,
                     groupId: groupId,
@@ -163,6 +163,7 @@ module.exports = async s => {
                     type: 'text',
                 });
             } else {
+                console.log(isEdit, userId, platform, text);
                 sysMethod.push({
                     platform: platform,
                     userId: userId,
@@ -184,12 +185,12 @@ module.exports = async s => {
             history.push({
                 role: 'assistant', content: [{ type: "image_url", image_url: { url: link } }, { type: "text", text: lastLine }]
             });
-            await relpyMod(isEdit, lastLine);
+            await relpyMod(s, isEdit, lastLine);
             return history;
         }
         else {
             let text = removeUrls(response.text);
-            await relpyMod(isEdit, text);
+            await relpyMod(s, isEdit, text);
             history.push({
                 role: 'assistant', content: [{ type: "text", text: text }]
             });
@@ -253,7 +254,7 @@ module.exports = async s => {
         console.log(error);
         let errorMessage = error.message || error.toString();
         errorMessage = unicodeToChinese(errorMessage);
-        s.reply("发生错误: " + errorMessage);
+        relpyMod(s, isEdit, "发生错误: " + errorMessage);
     }
 
     function isUnicode(str) {
@@ -272,4 +273,3 @@ module.exports = async s => {
         }
     }
 };
-
