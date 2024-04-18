@@ -1,7 +1,7 @@
 [
     {
       "act": "默认",
-      "prompt": ""
+      "prompt": "你是 ChatGPT，一个由 OpenAI 训练的大型语言模型。请尽可能简洁地回答"
     },
     {
       "act": "助手",

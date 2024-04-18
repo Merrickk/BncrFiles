@@ -4,7 +4,7 @@
  * @origin Merrick
  * @version 1.0.2
  * @description ChatGpt聊天，适配无界2.0
- * @rule ^(ai) ([\s\S]+)$
+ * @rule ^(ai|画图) ([\s\S]+)$
  * @rule ^(ai)$
  * @admin true
  * @public false
@@ -18,18 +18,23 @@
 
 v1.0.1 修复了QQ和微信平台在编辑模式下不能正常回复的bug
 v1.0.2 跟进大佬修改了调用chatgpt模块，用got发送请求（虽然我不懂但是我会复制粘贴）
+v1.0.3 因为前期搭建的项目有问题，调试的时候找不到原因，干脆把代码重新梳理了一遍，具体改动如下：
+       1. 修改api的调用方式，采用ChatGPT API官方文档里的方式调用，去除了原作者大量的错误处理代码，大幅度精简了代码
+       2. 添加画图功能，设定需要单独配置画图的各项参数，方便用户的不同需求
+       3. 修改HumanTG的编辑回复功能，可以支持各种回复类型（前提是适配器支持）
+       注意：这个版本最主要是加入了画图功能，如果不需要画图也可以不更新，因为新的调用方式我没有深入测试，不确定比原作者的got方式更好，更新的话需要同步更新prompts.json文件
 
 todo（其实是我想做不会做，大佬带我~~~~~）
 1.用更优雅的方式实现HumanTG的编辑回复和直接回复的切换
 2.选择预设角色的时候可以把Prompt直接显示出来，方便调整（下拉列表框和文本框联动）
-3.添加画图功能（大佬的代码已经实现了，我没有4.0的ApiKey，无法测试）
+3.添加画图功能（大佬的代码已经实现了，我没有4.0的ApiKey，无法测试）✔
 */
 
 const fs = require('fs');
 const path = require('path');
-const got = require('got');
 const promptFilePath = './mod/prompts.json';
 const fullPath = path.join(__dirname, promptFilePath);
+const got = require('got');
 // 读取prompts
 let prompts = []
 try {
@@ -45,17 +50,19 @@ for (let i=0; i<prompts.length; i++ ) {
     promptNames.push(prompts[i].act);
 }
 // 定义模型选项
-const modeNames = ['GPT-3.5', 'GPT-3.5-16K', 'GPT-4', 'GPT-4-联网', 'GPT-4-DALLE', 'GPT-4-32K'];
-const modeNums = [0, 1, 2, 3, 4, 5]
+const modes = ['gpt-3.5-turbo', 'gpt-3.5-turbo-16k', 'gpt-4', 'gpt-4-browsing', 'gpt-4-dalle', 'gpt-4-32k'];
 // 插件界面
 const BCS = BncrCreateSchema;
 const jsonSchema = BCS.object({
-    apiBaseUrl: BCS.string().setTitle('ApiBaseUrl').setDescription('必填项').setDefault(''),
+    apiBaseUrl: BCS.string().setTitle('ApiBaseUrl').setDescription('必填项，一般为"域名/v1"').setDefault(''),
     apiKey: BCS.string().setTitle('ApiKey').setDescription('必填项').setDefault(''),
     isEdit: BCS.boolean().setTitle('HumanTG是否开启编辑模式').setDescription('关闭则逐条回复，不编辑消息').setDefault(false),
-    promptSel: BCS.number().setTitle('选择预设角色',).setDescription('请根据需要选择').setEnum(promptNums).setEnumNames(promptNames).setDefault(0),
-    modeSel: BCS.number().setTitle('选择GPT模型',).setDescription('请根据需要选择').setEnum(modeNums).setEnumNames(modeNames).setDefault(0),
-    promptDiy: BCS.string().setTitle('请输入自定义Prompt').setDescription('输入自定义Prompt会使预设角色失效').setDefault('')
+    promptSel: BCS.number().setTitle('选择预设角色').setDescription('请根据需要选择').setEnum(promptNums).setEnumNames(promptNames).setDefault(0),
+    modeSel: BCS.string().setTitle('选择GPT模型').setDescription('请根据需要选择').setEnum(modes).setDefault('gpt-3.5-turbo'),
+    promptDiy: BCS.string().setTitle('请输入自定义Prompt').setDescription('输入自定义Prompt会使预设角色失效').setDefault(''),
+    imgBaseUrl: BCS.string().setTitle('画图的ApiBaseUrl').setDescription('启用画图功能必填，一般为"域名/v1"').setDefault(''),
+    imgMode: BCS.string().setTitle('画图的模型').setDescription('启用画图功能必填，根据自己的API支持情况填写').setDefault(''),
+    imgApiKey: BCS.string().setTitle('画图的ApiKey').setDescription('启用画图功能必填，根据自己的API支持情况填写').setDefault(''),
 });
 const ConfigDB = new BncrPluginConfig(jsonSchema);
 
@@ -65,14 +72,26 @@ module.exports = async s => {
     if (!Object.keys(CDB).length) return await s.reply('请先到WEB界面完成插件首次配置');
     /* 补全依赖 */
     await sysMethod.testModule(['chatgpt'], { install: true });
-    const modeNames = ['gpt-3.5-turbo', 'gpt-3.5-turbo-16k', 'gpt-4', 'gpt-4-browsing', 'gpt-4-dalle', 'gpt-4-32k'];
+    await sysMethod.testModule(['got'], { install: true });
     if (!CDB.apiBaseUrl) return s.reply("未配置ApiBaseUrl");
     if (!CDB.apiKey) return s.reply("未配置ApiKey");
     const apiKey = CDB.apiKey;
     const apiBaseUrl = CDB.apiBaseUrl;
     const isEdit = CDB.isEdit;
     const promptDiy = CDB.promptDiy;
-    let gptAPI = initializeChatGPTAPI(apiKey, apiBaseUrl, modeNames[CDB.modeSel]);
+    const imgBaseUrl = CDB.imgBaseUrl;
+    const imgMode = CDB.imgMode;
+    const imgApiKey = CDB.imgApiKey;
+
+
+    const { ChatGPTAPI } = await import('chatgpt');
+    let gptAPI = new ChatGPTAPI({
+        apiKey: apiKey,
+        apiBaseUrl: apiBaseUrl,
+        completionParams: { model: CDB.modeSel},
+        debug: false
+    });
+
     if (s.param(1) === 'ai') {
         let prompt = '';
         if (!promptDiy) {
@@ -80,162 +99,84 @@ module.exports = async s => {
         } else {
             prompt = promptDiy;
         }
-        let history = [{
-            role: 'system', content:  prompt + '，另外，输出字符限制，输出50-100字'
-        }]
-        await relpyMod(s, isEdit, `Let me see...`);
-        history.push({ role: 'user', content: s.param(2) });
-        let response
-        try {
-            let response = await fetchOpenAICompletions(gptAPI, history);
-            history.push({
-                role: 'assistant', content: response
-            });
-            await relpyMod(s, isEdit, response);
-            await continuousDialogue(gptAPI);
-        }
-        catch (error) {
-            handleError(error);
-            //如果错误信息包含OpenAI error 429，使用gpt3.5模型继续调用
-            if (error.toString().indexOf('OpenAI error 429') !== -1) {
-                await relpyMod(s, isEdit, "gpt4模型调用失败，正在使用gpt3.5模型");
-                try {
-                    gptAPI = initializeChatGPTAPI(apiKey, apiBaseUrl, 'gpt-3.5-turbo');
-                    let response = await fetchOpenAICompletions(gptAPI, history);
-                    history.push({ role: 'assistant', content: response });
-                    await relpyMod(s, isEdit, response);
-                    await continuousDialogue(gptAPI);
-                }
-                catch (error) {
-                    handleError(error);
-                    return;
-                }
+        const promptMessage = `${prompt}，另外，输出字符限制，输出50-100字。`
+        await relpyMod(s, isEdit, `正在思考中，请稍后...`);
+        let fistChat = '你好';
+        if (s.param(2)) fistChat = s.param(2)
+        let response = await gptAPI.sendMessage(fistChat, {
+            systemMessage: promptMessage,
+            timeoutMs: 3 * 10 * 1000
+        });
+        await relpyMod(s, isEdit, response.text);
+        while (true) {
+            let input = await s.waitInput(() => { }, 60);
+            if (!input) {
+                await relpyMod(s, isEdit, "对话超时。");
+                break;
             }
-            return;
-        }
-
-        async function continuousDialogue(gptAPI) {
-            while (true) {
-                let input = await s.waitInput(() => { }, 60);
-                if (!input) {
-                    await relpyMod(s, isEdit, "对话超时。");
-                    break;
-                }
-                input = input.getMsg();
-                if (input.toLowerCase() === 'q') {
-                    await relpyMod(s, isEdit, "对话结束。");
-                    break;
-                }
-                history.push({
-                    role: 'user', content: input
+            input = input.getMsg();
+            if (input.toLowerCase() === 'q') {
+                await relpyMod(s, isEdit, "对话结束。");
+                break;
+            }
+            if (input == '') continue;
+            try {
+                response = await gptAPI.sendMessage(input, {
+                    parentMessageId: response.id
                 });
-                let response;
-                try {
-                    response = await fetchOpenAICompletions(gptAPI, history);
-                    if (response) {
-                        history.push({ role: 'assistant', content: response });
-                        await relpyMod(s, isEdit, response);
-                    } else {
-                        throw new Error('continuousDialogue error');
-                    }
-                } catch (error) {
-                    handleError(error);
-                    return;
-                }
+                await relpyMod(s, isEdit, response.text);
+            } catch (error) {
+                console.log(error);
+                return;
             }
+        }
+    } else if (s.param(1) === '画图') {
+        if (!imgBaseUrl) return await relpyMod(s, isEdit, "未配置画图ApiBaseUrl");
+        if (!imgApiKey) return await relpyMod(s, isEdit, "未配置画图ApiKey");
+        if (!imgMode) return await relpyMod(s, isEdit, "未配置画图模型");
+        await relpyMod(s, isEdit, '正在生成图像，请稍后');
+        try {
+            const response = await got.post( imgBaseUrl + '/images/generations', {
+                json: {
+                    model: imgMode,
+                    prompt: `画一幅图，${s.param(2)}`
+                },
+                headers: {
+                    'Authorization': `Bearer ${imgApiKey}`
+                }
+            });
+            let data = JSON.parse(response.body).data;
+            let dataUrl = data[0].url;
+            await relpyMod(s, isEdit, {type:'image', path:dataUrl});
+        } catch (error) {
+            await relpyMod(s, isEdit, '画图出现异常，请去控制台查看错误提示');
+            console.log(error);
+            return;
         }
     }
 
-    async function relpyMod(s, isEdit, text) {
+    async function relpyMod(s, isEdit, replyVar) {
         const userId = s.getUserId();
         const groupId = s.getGroupId();
         const platform = s.getFrom();
+        let replyObj = {};
+        if (typeof replyVar === 'string') {
+            replyObj = {type:'text', msg: replyVar}
+        } else if (typeof replyVar === 'object') {
+            replyObj = replyVar;
+        }
         if (isEdit) {
-            await s.reply(text);
+            await s.reply(replyObj);
         } else {
+            replyObj['platform'] = platform
             if (groupId && groupId!=0) {
-                sysMethod.push({
-                    platform: platform,
-                    groupId: groupId,
-                    msg: text,
-                    type: 'text',
-                });
+                replyObj['groupId'] = groupId
+                sysMethod.push(replyObj);
+                
             } else {
-                sysMethod.push({
-                    platform: platform,
-                    userId: userId,
-                    msg: text,
-                    type: 'text',
-                });
+                replyObj['userId'] = userId
+                sysMethod.push(replyObj);
             }
         }
-        
     }
-
-    function initializeChatGPTAPI(apiKey, baseUrl, model) {
-        return {
-            apiKey: apiKey,
-            apiBaseUrl: baseUrl,
-            completionParams: {
-                model: model
-            }
-        };
-    }
-
-    async function fetchOpenAICompletions(gptAPI, messages, timeout = 30000) {
-        const fetchPromise = got.post(`${gptAPI.apiBaseUrl}/chat/completions`, {
-            json: {
-                model: gptAPI.completionParams.model,
-                messages: messages,
-                stream: false
-            },
-            responseType: 'json',
-            timeout: timeout,
-            headers: {
-                'Authorization': `Bearer ${gptAPI.apiKey}`
-            }
-        });
-
-        try {
-            const response = await fetchPromise;
-
-            if (response.statusCode !== 200) {
-                throw new Error(`HTTP error! status: ${response.statusCode}`);
-            }
-            const res = response.body.choices[0].message.content;
-            return res;
-        } catch (error) {
-            console.error(`Fetch error: ${error.message}`);
-            console.error(`Error stack: ${error.stack}`);
-            if (error.response) {
-                console.error(`Response status: ${error.response.statusCode}`);
-                console.error(`Response data: ${JSON.stringify(error.response.body, null, 2)}`);
-            }
-            return null;
-        }
-    }
-
-    function handleError(error) {
-        console.log(error);
-        let errorMessage = error.message || error.toString();
-        errorMessage = unicodeToChinese(errorMessage);
-        relpyMod(s, isEdit, "发生错误: " + errorMessage);
-    }
-
-    function isUnicode(str) {
-        // 正则表达式检查字符串是否包含Unicode转义序列
-        return /\\u[\dA-F]{4}/i.test(str);
-    }
-
-    function unicodeToChinese(text) {
-        // 将Unicode转义序列转换为普通字符串
-        if (isUnicode(text)) {
-            return text.replace(/\\u([\dA-F]{4})/gi, function (match, grp) {
-                return String.fromCharCode(parseInt(grp, 16));
-            });
-        } else {
-            return text;
-        }
-    }
-};
-
+}    
