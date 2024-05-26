@@ -13,7 +13,7 @@
  * @classification ["适配器"]
  * @Copyright ©2023 Aming and Anmours. All rights reserved
  * Unauthorized copying of this file, via any medium is strictly prohibited
- * Modified by Merrick
+ * Modified by Merrick 
  */
 
 /* 更新日志：
