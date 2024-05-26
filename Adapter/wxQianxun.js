@@ -5,6 +5,7 @@
  * @origin Bncr团队
  * @version 1.0.2
  * @description wxQianxun适配器
+ * @team Merrick
  * @adapter true
  * @public false
  * @disable false

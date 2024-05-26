@@ -3,6 +3,7 @@
  * @name wxWork
  * @version 1.0.1
  * @description 企业微信适配器
+ * @team Merrick
  * @adapter true
  * @public false
  * @disable false

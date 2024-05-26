@@ -3,6 +3,7 @@
  * @name wxMP
  * @version 1.0.3
  * @description 微信公众号适配器
+ * @team Merrick
  * @adapter true
  * @public false
  * @disable false

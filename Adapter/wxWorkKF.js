@@ -3,6 +3,7 @@
  * @name wxWorkKF
  * @version 1.0.2
  * @description 微信客服适配器
+ * @team Merrick
  * @adapter true
  * @public false
  * @disable false
