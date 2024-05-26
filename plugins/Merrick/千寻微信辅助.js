@@ -5,6 +5,7 @@
  * @version 1.0.0
  * @rule ^(收到千寻好友添加请求|拉我进群)$
  * @description 自动同意好友请求，自动拉群
+ * @team Merrick
  * @platform wxQianxun
  * @priority 99999
  * @admin false

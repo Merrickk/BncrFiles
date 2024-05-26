@@ -7,6 +7,7 @@
  * @public false
  * @disable false
  * @priority 2
+ * @classification ["适配器"]
  * @Copyright ©2023 Merrick. All rights reserved
  */
 

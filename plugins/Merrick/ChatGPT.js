@@ -1,9 +1,10 @@
 /**
  * @author Merrick
- * @name ChatGPT_BNCR2.0
+ * @name ChatGPT
  * @origin Merrick
  * @version 1.0.2
  * @description ChatGpt聊天，适配无界2.0
+ * @team Merrick
  * @rule ^(ai|画图) ([\s\S]+)$
  * @rule ^(ai)$
  * @admin true

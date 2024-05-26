@@ -1,9 +1,10 @@
 /**
  * @author Merrick
- * @name gemini
+ * @name Gemini
  * @origin Merrick
  * @version 1.0.1
  * @description gemini聊天
+ * @team Merrick
  * @rule ^(gems|gemc|gemp)([\s\S]+)$
  * @admin true
  * @public false
