@@ -2,8 +2,8 @@
  * @author Merrick
  * @name ChatGPT
  * @origin Merrick
- * @version 1.0.2
- * @description ChatGpt聊天，适配无界2.0
+ * @version 1.0.4
+ * @description ChatGpt聊天，适配无界3.0
  * @team Merrick
  * @rule ^(ai|画图) ([\s\S]+)$
  * @rule ^(ai)$
@@ -24,6 +24,7 @@ v1.0.3 因为前期搭建的项目有问题，调试的时候找不到原因，�
        2. 添加画图功能，设定需要单独配置画图的各项参数，方便用户的不同需求
        3. 修改HumanTG的编辑回复功能，可以支持各种回复类型（前提是适配器支持）
        注意：这个版本最主要是加入了画图功能，如果不需要画图也可以不更新，因为新的调用方式我没有深入测试，不确定比原作者的got方式更好，更新的话需要同步更新prompts.json文件
+v1.0.4 适配无界3.0       
 
 todo（其实是我想做不会做，大佬带我~~~~~）
 1.用更优雅的方式实现HumanTG的编辑回复和直接回复的切换
