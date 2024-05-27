@@ -2,7 +2,7 @@
  * @author Merrick
  * @name Gemini
  * @origin Merrick
- * @version 1.0.1
+ * @version 1.0.2
  * @description gemini聊天
  * @team Merrick
  * @rule ^(gems|gemc|gemp)([\s\S]+)$
@@ -22,6 +22,7 @@
 
 v1.0.1 优化代码，增加单问答模式，修改触发命令，界面增加Max Tokens选项
 v1.0.0 基于sumuen大佬的插件修改，本人仅修复bug和适配2.0界面
+v1.0.2 适配3.0
 */
 
 const jsonSchema = BncrCreateSchema.object({

@@ -1,7 +1,7 @@
 /**
  * @author Merrick
  * @name wxWorkKF
- * @version 1.0.2
+ * @version 1.0.3
  * @description 微信客服适配器
  * @team Merrick
  * @adapter true
@@ -15,6 +15,7 @@
 /* 
 v1.0.1 更换API为微信客服独立版，适配无界2.0 WEB界面
 v1.0.2 修复bug，增加markdown、voice格式支持，在部分节点增加log输出，方便排查
+v1.0.3 适配3.0
 */
 
 /* 配置构造器 */

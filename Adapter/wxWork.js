@@ -1,7 +1,7 @@
 /**
  * @author Merrick
  * @name wxWork
- * @version 1.0.1
+ * @version 1.0.2
  * @description 企业微信适配器
  * @team Merrick
  * @adapter true
@@ -14,6 +14,7 @@
 
 /* 
 v1.0.1 修复bug，适配无界2.0 WEB界面，增加markdown、voice格式支持，在部分节点增加log输出，方便排查
+v1.0.2 适配3.0
 */
 
 

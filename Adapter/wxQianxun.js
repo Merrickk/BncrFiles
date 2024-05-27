@@ -3,7 +3,7 @@
  * @author Aming
  * @name wxQianxun
  * @origin Bncr团队
- * @version 1.0.2
+ * @version 1.0.3
  * @description wxQianxun适配器
  * @team Merrick
  * @adapter true
@@ -18,6 +18,7 @@
 
 /* 更新日志：
     v1.0.2 增加了自动同意添加好友和拉群功能，需要插件配合，插件下载地址：https://github.com/Merrickk/Bncr_plugins
+    v1.0.3 适配3.0
 */
 
 /* 配置构造器 */
