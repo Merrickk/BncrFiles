@@ -19,7 +19,6 @@
         本插件需要修改适配器，请去 https://github.com/Merrickk/Bncr_plugins/tree/main/Adapter 下载配套的适配器
         开启后可以自动同意好友申请，可以设置加好友暗号和欢迎语，发送【拉我进群】可以自动拉群
     v1.0.1 适配3.0
-
  */
 
 const BCS = BncrCreateSchema
