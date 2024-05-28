@@ -1,5 +1,5 @@
 # Bncr_plugins
-本库已适配3.0，订阅链接 https://github.com/Merrickk/BncrFile
+本库已适配3.0，订阅链接 https://github.com/Merrickk/BncrFiles
 ## 关于企业微信、微信客服和微信公众号适配器的对比说明
 ### 1.企业微信
 **优点：**
