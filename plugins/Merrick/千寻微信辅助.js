@@ -7,6 +7,7 @@
  * @description 自动同意好友请求，自动拉群
  * @team Merrick
  * @platform wxQianxun
+ * @public true
  * @priority 99999
  * @admin false
  * @disable false

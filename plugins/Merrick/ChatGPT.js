@@ -8,7 +8,7 @@
  * @rule ^(ai|画图) ([\s\S]+)$
  * @rule ^(ai)$
  * @admin true
- * @public false
+ * @public true
  * @priority 99999
  * @disable false
  */

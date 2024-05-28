@@ -7,7 +7,7 @@
  * @team Merrick
  * @rule ^(gems|gemc|gemp)([\s\S]+)$
  * @admin true
- * @public false
+ * @public true
  * @priority 9999
  * @disable false
  */
