@@ -131,5 +131,27 @@
     "isEncPlugin": false,
     "id": "7Z6H0SOpmv3v7wXvkc7CTaXPw3c=",
     "isChatPlugin": true
+  },
+  "iE19XaJwuzlvYARa1bFz43pjfHg=": {
+    "type": "github",
+    "name": "千寻微信辅助",
+    "author": "Merrick",
+    "team": "Merrick",
+    "version": "1.0.1",
+    "description": "自动同意好友请求，自动拉群",
+    "classification": [
+      "插件"
+    ],
+    "filename": "千寻微信辅助.js",
+    "fileDir": "/plugins/Merrick/千寻微信辅助.js",
+    "systemVersionRange": "",
+    "isCron": false,
+    "isAdapter": false,
+    "isMod": false,
+    "isService": false,
+    "isAuthentication": false,
+    "isEncPlugin": false,
+    "id": "iE19XaJwuzlvYARa1bFz43pjfHg=",
+    "isChatPlugin": true
   }
 }
