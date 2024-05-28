@@ -8,7 +8,7 @@
  * @team Merrick
  * @platform wxQianxun
  * @public true
- * @priority 99999
+ * @priority 9999
  * @admin false
  * @disable false
  */
