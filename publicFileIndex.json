@@ -1,3 +1,91 @@
 {
-  "annotation": "该文件由系统自动生成. 用于插件市场索引,请勿编辑该文件中的任何内容"
+  "annotation": "该文件由系统自动生成. 用于插件市场索引,请勿编辑该文件中的任何内容",
+  "/dYGSmV9Q9z/dctWzOcKXrN9Q04=": {
+    "type": "github",
+    "name": "wxMP",
+    "author": "Merrick",
+    "team": "Merrick",
+    "version": "1.0.4",
+    "description": "微信公众号适配器",
+    "classification": [
+      "适配器"
+    ],
+    "filename": "wxMP.js",
+    "fileDir": "/Adapter/wxMP.js",
+    "systemVersionRange": "",
+    "isCron": false,
+    "isAdapter": true,
+    "isMod": false,
+    "isService": false,
+    "isAuthentication": false,
+    "isEncPlugin": false,
+    "id": "/dYGSmV9Q9z/dctWzOcKXrN9Q04=",
+    "isChatPlugin": false
+  },
+  "lC2a4YDOHBOc+dzByj/4aVHq/Ds=": {
+    "type": "github",
+    "name": "wxQianxun",
+    "author": "Aming",
+    "team": "Merrick",
+    "version": "1.0.3",
+    "description": "wxQianxun适配器",
+    "classification": [
+      "适配器"
+    ],
+    "filename": "wxQianxun.js",
+    "fileDir": "/Adapter/wxQianxun.js",
+    "systemVersionRange": "",
+    "isCron": false,
+    "isAdapter": true,
+    "isMod": false,
+    "isService": false,
+    "isAuthentication": false,
+    "isEncPlugin": false,
+    "id": "lC2a4YDOHBOc+dzByj/4aVHq/Ds=",
+    "isChatPlugin": false
+  },
+  "xjQCoPCM0NE0YsClYI032QimWB8=": {
+    "type": "github",
+    "name": "wxWork",
+    "author": "Merrick",
+    "team": "Merrick",
+    "version": "1.0.2",
+    "description": "企业微信适配器",
+    "classification": [
+      "适配器"
+    ],
+    "filename": "wxWork.js",
+    "fileDir": "/Adapter/wxWork.js",
+    "systemVersionRange": "",
+    "isCron": false,
+    "isAdapter": true,
+    "isMod": false,
+    "isService": false,
+    "isAuthentication": false,
+    "isEncPlugin": false,
+    "id": "xjQCoPCM0NE0YsClYI032QimWB8=",
+    "isChatPlugin": false
+  },
+  "lSWnQO/Zr5hSNz9D/V2lZShxpNE=": {
+    "type": "github",
+    "name": "wxWorkKF",
+    "author": "Merrick",
+    "team": "Merrick",
+    "version": "1.0.3",
+    "description": "微信客服适配器",
+    "classification": [
+      "适配器"
+    ],
+    "filename": "wxWorkKF.js",
+    "fileDir": "/Adapter/wxWorkKF.js",
+    "systemVersionRange": "",
+    "isCron": false,
+    "isAdapter": true,
+    "isMod": false,
+    "isService": false,
+    "isAuthentication": false,
+    "isEncPlugin": false,
+    "id": "lSWnQO/Zr5hSNz9D/V2lZShxpNE=",
+    "isChatPlugin": false
+  }
 }
