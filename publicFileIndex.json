@@ -87,5 +87,49 @@
     "isEncPlugin": false,
     "id": "lSWnQO/Zr5hSNz9D/V2lZShxpNE=",
     "isChatPlugin": false
+  },
+  "HdQnUqI8kdQLRxnpZ6QvGdCB61I=": {
+    "type": "github",
+    "name": "ChatGPT",
+    "author": "Merrick",
+    "team": "Merrick",
+    "version": "1.0.4",
+    "description": "ChatGpt聊天，适配无界3.0",
+    "classification": [
+      "插件"
+    ],
+    "filename": "ChatGPT.js",
+    "fileDir": "/plugins/Merrick/ChatGPT.js",
+    "systemVersionRange": "",
+    "isCron": false,
+    "isAdapter": false,
+    "isMod": false,
+    "isService": false,
+    "isAuthentication": false,
+    "isEncPlugin": false,
+    "id": "HdQnUqI8kdQLRxnpZ6QvGdCB61I=",
+    "isChatPlugin": true
+  },
+  "7Z6H0SOpmv3v7wXvkc7CTaXPw3c=": {
+    "type": "github",
+    "name": "Gemini",
+    "author": "Merrick",
+    "team": "Merrick",
+    "version": "1.0.2",
+    "description": "gemini聊天",
+    "classification": [
+      "插件"
+    ],
+    "filename": "Gemini.js",
+    "fileDir": "/plugins/Merrick/Gemini.js",
+    "systemVersionRange": "",
+    "isCron": false,
+    "isAdapter": false,
+    "isMod": false,
+    "isService": false,
+    "isAuthentication": false,
+    "isEncPlugin": false,
+    "id": "7Z6H0SOpmv3v7wXvkc7CTaXPw3c=",
+    "isChatPlugin": true
   }
 }
