@@ -3,12 +3,10 @@
  * @name wxMP
  * @version 1.0.4
  * @description 微信公众号适配器
- * @team Merrick
  * @adapter true
- * @public true
+ * @public false
  * @disable false
- * @priority 2 
- * @classification ["适配器"]
+ * @priority 2
  * @Copyright ©2023 Merrick. All rights reserved
  */
 
@@ -20,7 +18,7 @@ v1.0.1 1.修复回复视频出错的问题
 v1.0.2 优化消息拉取方式，提高响应，减少错漏
 v1.0.3 1.添加关注公众号推送欢迎消息的功能，消息可以自定义
        2.优化控制台里的错误信息显示
-v1.0.4 适配3.0
+v1.0.4 修复了form-data方法调用的错误（可能会影响图片的获取），感谢C佬的指正
 
 注意：1.适配器只提供基本功能，可以用无界的官方命令测试，其他各种插件的问题请@插件作者适配
       2.服务号消息连续回复、自定义菜单等附件功能超出了个人订阅号的权限，因无法测试暂不添加
@@ -240,12 +238,10 @@ module.exports = async () => {
             const response = await got.get(mediaPath, { responseType: 'buffer' });
             const form = new FormData();
             form.append('media', response.body, { filename: `media.${ext}` }); // 设置文件名
-            const formData = form.getBuffer(); // 获取表单数据
             const formHeaders = form.getHeaders(); // 获取表单头部
             const options = {
-                body: formData,
+                body: form,
                 headers: formHeaders,
-                // responseType: 'json' // 响应类型为 JSON
             };
             const resJson = await got.post(url, options).json();
             if (resJson?.media_id) {
