@@ -7,7 +7,7 @@
  * @public false
  * @disable false
  * @priority 2
- * @Copyright ©2023 Merrick. All rights reserved
+ * @Copyright ©2023 Merrick. All rights reserved 
  */
 
 /* 
