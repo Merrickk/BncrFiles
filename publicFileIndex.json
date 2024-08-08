@@ -1,27 +1,5 @@
 {
   "annotation": "该文件由系统自动生成. 用于插件市场索引,请勿编辑该文件中的任何内容",
-  "/dYGSmV9Q9z/dctWzOcKXrN9Q04=": {
-    "type": "github",
-    "name": "wxMP",
-    "author": "Merrick",
-    "team": "Merrick",
-    "version": "1.0.4",
-    "description": "微信公众号适配器",
-    "classification": [
-      "适配器"
-    ],
-    "filename": "wxMP.js",
-    "fileDir": "/Adapter/wxMP.js",
-    "systemVersionRange": "",
-    "isCron": false,
-    "isAdapter": true,
-    "isMod": false,
-    "isService": false,
-    "isAuthentication": false,
-    "isEncPlugin": false,
-    "id": "/dYGSmV9Q9z/dctWzOcKXrN9Q04=",
-    "isChatPlugin": false
-  },
   "lC2a4YDOHBOc+dzByj/4aVHq/Ds=": {
     "type": "github",
     "name": "wxQianxun",
