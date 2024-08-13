@@ -29,13 +29,8 @@ jobs:
         run: |
           git config --global user.name 'github-actions[bot]'
           git config --global user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add .
           git add publicFileIndex.json
-          if ! git diff-index --quiet HEAD; then
-            git commit -m '由Actions自动生成插件市场所需JSON索引'
-            git push
-          else
-            echo "没有更改，无需提交"
-          fi
+          git commit -m '由Actions自动生成插件市场所需JSON索引'
+          git push
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
