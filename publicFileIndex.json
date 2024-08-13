@@ -1,0 +1,113 @@
+{
+  "annotation": "该文件由系统自动生成. 用于插件市场索引,请勿编辑该文件中的任何内容",
+  "lC2a4YDOHBOc+dzByj/4aVHq/Ds=": {
+    "type": "github",
+    "name": "wxQianxun",
+    "author": "Aming",
+    "team": "Merrick",
+    "version": "1.0.3",
+    "description": "wxQianxun适配器",
+    "classification": [
+      "适配器"
+    ],
+    "filename": "wxQianxun.js",
+    "fileDir": "/Adapter/wxQianxun.js",
+    "systemVersionRange": "",
+    "isCron": false,
+    "isAdapter": true,
+    "isMod": false,
+    "isService": false,
+    "isAuthentication": false,
+    "isEncPlugin": false,
+    "id": "lC2a4YDOHBOc+dzByj/4aVHq/Ds=",
+    "isChatPlugin": false
+  },
+  "xjQCoPCM0NE0YsClYI032QimWB8=": {
+    "type": "github",
+    "name": "wxWork",
+    "author": "Merrick",
+    "team": "Merrick",
+    "version": "1.0.2",
+    "description": "企业微信适配器",
+    "classification": [
+      "适配器"
+    ],
+    "filename": "wxWork.js",
+    "fileDir": "/Adapter/wxWork.js",
+    "systemVersionRange": "",
+    "isCron": false,
+    "isAdapter": true,
+    "isMod": false,
+    "isService": false,
+    "isAuthentication": false,
+    "isEncPlugin": false,
+    "id": "xjQCoPCM0NE0YsClYI032QimWB8=",
+    "isChatPlugin": false
+  },
+  "HdQnUqI8kdQLRxnpZ6QvGdCB61I=": {
+    "type": "github",
+    "name": "ChatGPT",
+    "author": "Merrick",
+    "team": "Merrick",
+    "version": "1.0.4",
+    "description": "ChatGpt聊天，适配无界3.0",
+    "classification": [
+      "插件"
+    ],
+    "filename": "ChatGPT.js",
+    "fileDir": "/plugins/Merrick/ChatGPT.js",
+    "systemVersionRange": "",
+    "isCron": false,
+    "isAdapter": false,
+    "isMod": false,
+    "isService": false,
+    "isAuthentication": false,
+    "isEncPlugin": false,
+    "id": "HdQnUqI8kdQLRxnpZ6QvGdCB61I=",
+    "isChatPlugin": true
+  },
+  "7Z6H0SOpmv3v7wXvkc7CTaXPw3c=": {
+    "type": "github",
+    "name": "Gemini",
+    "author": "Merrick",
+    "team": "Merrick",
+    "version": "1.0.2",
+    "description": "gemini聊天",
+    "classification": [
+      "插件"
+    ],
+    "filename": "Gemini.js",
+    "fileDir": "/plugins/Merrick/Gemini.js",
+    "systemVersionRange": "",
+    "isCron": false,
+    "isAdapter": false,
+    "isMod": false,
+    "isService": false,
+    "isAuthentication": false,
+    "isEncPlugin": false,
+    "id": "7Z6H0SOpmv3v7wXvkc7CTaXPw3c=",
+    "isChatPlugin": true
+  },
+  "iE19XaJwuzlvYARa1bFz43pjfHg=": {
+    "type": "github",
+    "name": "千寻微信辅助",
+    "author": "Merrick",
+    "team": "Merrick",
+    "version": "1.0.1",
+    "description": "自动同意好友请求，自动拉群",
+    "classification": [
+      "插件"
+    ],
+    "filename": "千寻微信辅助.js",
+    "fileDir": "/plugins/Merrick/千寻微信辅助.js",
+    "systemVersionRange": "",
+    "isCron": false,
+    "isAdapter": false,
+    "isMod": false,
+    "isService": false,
+    "isAuthentication": false,
+    "isEncPlugin": false,
+    "id": "iE19XaJwuzlvYARa1bFz43pjfHg=",
+    "isChatPlugin": true
+  }
+}
