@@ -33,5 +33,6 @@ jobs:
           if ! git diff-index --quiet HEAD; then
             git commit -m '由Actions自动生成插件市场所需JSON索引'
             git push
+          fi
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
