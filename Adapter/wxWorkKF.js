@@ -1,8 +1,8 @@
 /**
  * @author Merrick
- * @name wxMP
- * @version 1.0.4
- * @description 微信公众号适配器
+ * @name wxWorkKF
+ * @version 1.0.2
+ * @description 微信客服适配器
  * @adapter true
  * @public false
  * @disable false
@@ -11,115 +11,87 @@
  */
 
 /* 
-v1.0.0 实现未认证订阅号的基本功能，可以回复文本、图片、视频、语音
-v1.0.1 1.修复回复视频出错的问题
-       2.修复回复文本格式错乱的问题（未测）
-       3.添加“拉取消息”功能，机器人回复多条消息时，发送“拉取消息”可以获取后面回复的消息
-v1.0.2 优化消息拉取方式，提高响应，减少错漏
-v1.0.3 1.添加关注公众号推送欢迎消息的功能，消息可以自定义
-       2.优化控制台里的错误信息显示
-v1.0.4 修复了某些情况下form-data报错（可能会影响图片的获取），感谢C佬的指正
-
-注意：1.适配器只提供基本功能，可以用无界的官方命令测试，其他各种插件的问题请@插件作者适配
-      2.服务号消息连续回复、自定义菜单等附件功能超出了个人订阅号的权限，因无法测试暂不添加
+v1.0.1 更换API为微信客服独立版，适配无界2.0 WEB界面
+v1.0.2 修复bug，增加markdown、voice格式支持，在部分节点增加log输出，方便排查
 */
 
 /* 配置构造器 */
 const jsonSchema = BncrCreateSchema.object({
     enable: BncrCreateSchema.boolean().setTitle('是否开启适配器').setDescription(`设置为关则不加载该适配器`).setDefault(false),
-    appID: BncrCreateSchema.string().setTitle('AppID').setDescription(`请填入“设置与开发-基本配置”页面设置获取的AppID`).setDefault(''),
-    appSecret: BncrCreateSchema.string().setTitle('AppSecret').setDescription(`请填入“设置与开发-基本配置”页面设置获取的AppSecret`).setDefault(''),
-    mpToken: BncrCreateSchema.string().setTitle('Token').setDescription(`请填入“设置与开发-基本配置”页面设置的Token`).setDefault(''),
-    encodingAESKey: BncrCreateSchema.string().setTitle('EncodingAESKey').setDescription(`请填入“设置与开发-基本配置”页面获取的的EncodingAESKey`).setDefault(''),
-    pullMsgKeyword: BncrCreateSchema.string().setTitle('拉取消息指令').setDescription(`自定义填写拉取消息的指令，可以获取机器人回复的多条消息`).setDefault('拉取消息'),
-    welcomText: BncrCreateSchema.string().setTitle('欢迎信息').setDescription(`设置用户第一次关注公众号时发送的欢迎信息`).setDefault('欢迎！')
+    corpId: BncrCreateSchema.string().setTitle('企业ID').setDescription(`请填入“微信客服-开发配置”页面获取的企业ID`).setDefault(''),
+    corpSecret: BncrCreateSchema.string().setTitle('Secret').setDescription(`请填入“微信客服-开发配置”页面获取的Secret`).setDefault(''),
+    encodingAESKey: BncrCreateSchema.string().setTitle('encodingAESKey').setDescription(`请填入“微信客服-开发配置-回调配置”页面获取的的encodingAESKey`).setDefault('')
 });
 /* 配置管理器 */
 const ConfigDB = new BncrPluginConfig(jsonSchema);
 const got = require('got');
-const crypto = require('crypto');
+const { decrypt } = require('@wecom/crypto');
+const xmlParse = require('xml2js').parseString;
 const FormData = require('form-data');
 const xmlparser = require('express-xml-bodyparser');
-let msgQueue = [];
 
 module.exports = async () => {
     /* 读取用户配置 */
     await ConfigDB.get();
     /* 如果用户未配置,userConfig则为空对象{} */
-    if (!Object.keys(ConfigDB.userConfig).length) return sysMethod.startOutLogs('未配置wxMP适配器，退出');
-    if (!ConfigDB.userConfig.enable) return sysMethod.startOutLogs('未启用wxMP适配器，退出');
+    if (!Object.keys(ConfigDB.userConfig).length) return sysMethod.startOutLogs('未启用wxWorkKF适配器，退出');
+    if (!ConfigDB.userConfig.enable) return sysMethod.startOutLogs('未启用wxWorkKF适配器，退出');
     const encodingAESKey = ConfigDB.userConfig.encodingAESKey;
     if (!encodingAESKey) return console.log('未设置encodingAESKey');
-    const mpToken = ConfigDB.userConfig.mpToken;
-    if (!mpToken) return console.log('未设置Token');
-    const appID = ConfigDB.userConfig.appID;
-    if (!appID) return console.log('未设置AppID');
-    const appSecret = ConfigDB.userConfig.appSecret;
-    if (!appSecret) return console.log('未设置AppSecret');
-    const pullMsgKeyword = ConfigDB.userConfig.pullMsgKeyword;
-    const welcomText = ConfigDB.userConfig.welcomText;
+    const corpId = ConfigDB.userConfig.corpId;
+    if (!corpId) return console.log('未设置corpId');
+    const corpSecret = ConfigDB.userConfig.corpSecret;
+    if (!corpSecret) return console.log('未设置Secret');
     //这里new的名字将来会作为 sender.getFrom() 的返回值
-    const wxMP = new Adapter('wxMP');
-    const wxDB = new BncrDB('wxMP');
-    let botId = await wxDB.get('wxMPBotId', '');
+    const wxWorkKF = new Adapter('wxWorkKF');
+    const wxDB = new BncrDB('wxWorkKF');
 
     /**向/api/系统路由中添加路由 */
     router.use(xmlparser());
-    router.get('/api/bot/wxMP', (req, res) => {
+    router.get('/api/bot/wxWorkKF', (req, res) => {
         try {
-            const data = req.query;
-            if (Object.keys(data).length === 0) return res.send('这是Bncr wxMP Api接口，你的get请求测试正常~，请用post交互数据');
-            const { signature, timestamp, nonce, echostr } = data;
-            const token = mpToken;
-            const list = [token, timestamp, nonce];
-            list.sort();
-            const sha1 = crypto.createHash('sha1');
-            sha1.update(list.join(''));
-            const hashcode = sha1.digest('hex');
-            // console.log("handle/GET func: hashcode, signature: ", hashcode, signature);
-            if (hashcode === signature) {
-                return res.send(echostr);
-            } else {
-                return res.send('');
-            }
+            const params = req.query;
+            const { message } = decrypt(encodingAESKey, params.echostr);
+            return res.send(message);
         } catch (e) {
             console.error('对接模块出错', e);
-            res.send('这是Bncr wxMP Api接口，你的get请求测试正常~，请用post交互数据');
+            res.send({ msg: '这是Bncr wxWorkKF Api接口，你的get请求测试正常~，请用post交互数据' });
         }
     });
 
-    router.post('/api/bot/wxMP', async (req, res) => {
+    router.post('/api/bot/wxWorkKF', async (req, res) => {
         try {
+            // 接收到用户发送给客服的消息
             const body = req.body.xml;
-            const {
-                tousername: [mpId],
-                fromusername: [usrId],
-                msgtype: [msgType]
-            } = body;
-            const msgContent = body?.content?.[0];
-            const event = body?.event?.[0];
-            const msgId = body?.msgid?.[0];
-            if (botId !== mpId) await wxDB.set('wxMPBotId', mpId);
-            if (msgContent) console.log(`收到 ${usrId} 发送的公众号消息 ${msgContent}`);
-            if (msgType === 'event' && event === 'subscribe') {
-                const welcomMsg = `<xml>
-                    <ToUserName><![CDATA[${usrId}]]></ToUserName>
-                    <FromUserName><![CDATA[${botId}]]></FromUserName>
-                    <CreateTime>${Date.now()}</CreateTime>
-                    <MsgType><![CDATA[text]]></MsgType>
-                    <Content><![CDATA[${welcomText}]]></Content>
-                </xml>`;
-                res.send(welcomMsg);
-                return;
-            } else if (msgType !== 'text') {
-                res.send('success');
-                return;
+            const xmlMsg = decrypt(encodingAESKey, body.encrypt[0]);
+            const msgCursor = await wxDB.get('msgCursor', '');
+            const botId = await wxDB.get('wxWorkKFBotId', ''); //自动设置，无需更改
+            let msgJson = {};
+            xmlParse (xmlMsg.message, function (err, result) { msgJson = result.xml });
+            if (msgJson) res.send(''); 
+            // 提取信息组成新的body发送给微信后台拉取消息的详细信息
+            botID = msgJson.OpenKfId[0];
+            reqBody = {
+                "cursor": msgCursor,
+                "token": msgJson.Token[0],
+                "limit": 1000,
+                "voice_format": 0,
+                "open_kfid": botID
+            };
+            const resData = await getMsg(reqBody);
+            if (!resData || resData.errcode !== 0) return console.log(resData);
+            await wxDB.set('msgCursor', resData.next_cursor);
+            const msgData = resData.msg_list.pop(); 
+            if (!msgData) return;
+            if (msgData && msgData.msgtype === 'event') return;
+            let msgContent, msgId, usrId;
+            if (msgData.msgtype === 'text') {
+                msgContent = msgData.text.content;
+                msgId = msgData.msgid;
+                usrId = msgData.external_userid;
             }
-            if (msgContent === pullMsgKeyword) {
-                const dbmsg = getReply();
-                if (dbmsg) return res.send(dbmsg);
-            }
-            msgQueue = [];
+            if (botId !== botID) await wxDB.set('wxWorkKFBotId', botID);
+            console.log(`收到 ${usrId} 发送的微信客服消息 ${msgContent}`);
             let msgInfo = {
                 userId: usrId || '',
                 userName: '',
@@ -128,101 +100,126 @@ module.exports = async () => {
                 msg: msgContent || '',
                 msgId: msgId || '',
                 fromType: `Social`,
-            };
-            msgInfo && wxMP.receive(msgInfo);
-            let replyMsg;
-            for (let i=0; i<8; i++ ) {
-                replyMsg = msgQueue.shift();
-                if (replyMsg) break;
-                await sysMethod.sleep(0.5);
             }
-            if (replyMsg) {
-                res.send(replyMsg);
-            } else {
-                res.send('success');
-            }
-            return;
+            msgInfo && wxWorkKF.receive(msgInfo);         
         } catch (e) {
             console.error('接收消息模块出错', e);
             res.send('');
         }
     });
 
-    wxMP.reply = async function (replyInfo) {
+    wxWorkKF.reply = async function (replyInfo) {
         try {
             let body, mediaId;
-            const usrId = replyInfo.userId;
-            botId = await wxDB.get('wxMPBotId', '');
+            const botId = await wxDB.get('wxWorkKFBotId', '');
             switch (replyInfo.type) {
                 case 'text':
-                    // replyInfo.msg = replyInfo.msg.replace(/\n/g, '\r');
-                    body = `<xml>
-                        <ToUserName><![CDATA[${usrId}]]></ToUserName>
-                        <FromUserName><![CDATA[${botId}]]></FromUserName>
-                        <CreateTime>${Date.now()}</CreateTime>
-                        <MsgType><![CDATA[text]]></MsgType>
-                        <Content><![CDATA[${replyInfo.msg}]]></Content>
-                    </xml>`;
+                    body = {
+                        "touser": replyInfo.userId,
+                        "open_kfid": botId,
+                        "msgtype": "text",
+                        "text": {
+                            "content": replyInfo.msg
+                        }
+                    };
                     break;
                 case 'image':
                     mediaId = await getMediaID(replyInfo.path, 'image');
-                    body = `<xml>
-                        <ToUserName><![CDATA[${usrId}]]></ToUserName>
-                        <FromUserName><![CDATA[${botId}]]></FromUserName>
-                        <CreateTime>${Date.now()}</CreateTime>
-                        <MsgType><![CDATA[image]]></MsgType>
-                        <Image><MediaId><![CDATA[${mediaId}]]></MediaId></Image>
-                    </xml>`;
+                    body = {
+                        "touser": replyInfo.userId,
+                        "msgtype": "image",
+                        "open_kfid": botId,
+                        "image": {
+                            "media_id": mediaId
+                        }
+                    };
                     break;
                 case 'video':
                     mediaId = await getMediaID(replyInfo.path, 'video');
-                    body = `<xml>
-                        <ToUserName><![CDATA[${usrId}]]></ToUserName>
-                        <FromUserName><![CDATA[${botId}]]></FromUserName>
-                        <CreateTime>${Date.now()}</CreateTime>
-                        <MsgType><![CDATA[video]]></MsgType>
-                        <Video><MediaId><![CDATA[${mediaId}]]></MediaId></Video>
-                    </xml>`;
+                    body = {
+                        "touser": replyInfo.userId,
+                        "msgtype": "video",
+                        "open_kfid": botId,
+                        "video": {
+                            "media_id": mediaId
+                        }
+                    };
                     break;
                 case 'voice':
                     mediaId = await getMediaID(replyInfo.path, 'voice');
-                    body = `<xml>
-                        <ToUserName><![CDATA[${usrId}]]></ToUserName>
-                        <FromUserName><![CDATA[${botId}]]></FromUserName>
-                        <CreateTime>${Date.now()}</CreateTime>
-                        <MsgType><![CDATA[voice]]></MsgType>
-                        <Voice><MediaId><![CDATA[${mediaId}]]></MediaId></Voice>
-                    </xml>`;
+                    body = {
+                        "touser": replyInfo.userId,
+                        "msgtype": "voice",
+                        "open_kfid": botId,
+                        "voice": {
+                            "media_id": mediaId
+                        }
+                    };
                     break;
                 default:
                     return;
             }
             if (body) {
-                msgQueue.push(body);
-                return;
-                // return msgId; //reply中的return 最终会返回到调用者
+                let msgId = await sendMsg(body);
+                // console.log(body, msgId);
+                return msgId; //reply中的return 最终会返回到调用者
             }
         } catch (e) {
             console.error('回复消息模块出错', e);
             res.send('');
         }
     }
-
     /* 推送消息方法 */
-    wxMP.push = () => {};
+    wxWorkKF.push = async function (replyInfo) {
+        return this.reply(replyInfo);
+    }
 
-    wxMP.delMsg = () => {};
+    /* 撤回消息方法 */
+    wxWorkKF.delMsg = async function (msgId) {
+        try {
+            await getAccessToken();
+            let accessToken = await wxDB.get('wxWorkKFToken', ''),
+                url = `https://qyapi.weixin.qq.com/cgi-bin/kf/recall_msg?access_token=${accessToken}`,
+                body = JSON.stringify({ "msgid": msgId[1], "open_kfid": botId});
+            if (msgId) await got.post({url, body:body});
+            return true;
+        } catch (e) {
+            console.error('撤回消息模块出错', e);
+            return false;
+        }
+    }
 
-    return wxMP;
+    return wxWorkKF;
 
-    function getReply() {
-        const arr = [msgQueue.shift(), msgQueue.length];
-        if (arr[0]) {
-            const keyStr = '<Content><![CDATA[';
-            const insertIndex = arr[0].indexOf(keyStr) + keyStr.length;
-            const insertStr = `获取到新消息，剩余消息${arr[1]}条\n\n`;
-            const reStr = arr[0].substring(0, insertIndex) + insertStr + arr[0].substring(insertIndex);
-            return reStr;
+    async function getMsg(body) {
+        const accessToken = await getAccessToken();
+        try {
+            const url = `https://qyapi.weixin.qq.com/cgi-bin/kf/sync_msg?access_token=${accessToken}`;
+            let hasMore = 1,
+                resJson = [];
+            while (hasMore === 1) {
+                resJson = await got.post({url, json:body}).json();
+                hasMore = resJson.has_more;
+            }
+            return resJson;
+        } catch (e) {
+            console.error(`获取消息函数出错`, JSON.stringify(resJson));
+        }
+        
+    }
+
+    async function sendMsg(body) {
+        const accessToken = await getAccessToken();
+        try {
+            const url = `https://qyapi.weixin.qq.com/cgi-bin/kf/send_msg?access_token=${accessToken}`;
+            const resJson = await got.post({url, json:body}).json();
+            if (resJson['errcode'] === 0) {
+                return resJson.msgid;
+            } else {
+                console.log(`发送消息函数出错`, JSON.stringify(resJson));
+            }
+        } catch (e) {
+            console.error(`发送消息函数出错`, e);
         }
     }
 
@@ -230,22 +227,24 @@ module.exports = async () => {
         try {
             // 获取Token生成上传url
             const accessToken = await getAccessToken();
-            const url = `https://api.weixin.qq.com/cgi-bin/media/upload?access_token=${accessToken}&type=${mediaType}`;
+            const url = `https://qyapi.weixin.qq.com/cgi-bin/media/upload?access_token=${accessToken}&type=${mediaType}`;
             // 获取网络图片文件流并上传到微信服务器
-            let ext = 'jpg';
-            const match = mediaPath.match(/\.[^./?#]+$/);
-            if (match) ext = match[0].substring(1);
             const response = await got.get(mediaPath, { responseType: 'buffer' });
             const form = new FormData();
-            form.append('media', response.body, { filename: `media.${ext}` }); // 设置文件名
+            form.append('media', response.body, { filename: 'media' }); // 设置文件名
+            const formData = form.getBuffer(); // 获取表单数据
             const formHeaders = form.getHeaders(); // 获取表单头部
             const options = {
-                body: form,
-                headers: formHeaders,
+                body: formData,
+                headers: {
+                    ...formHeaders,
+                    'Content-Length': formData.length // 必须设置 Content-Length
+                },
+                responseType: 'json' // 响应类型为 JSON
             };
-            const resJson = await got.post(url, options).json();
-            if (resJson?.media_id) {
-                return resJson.media_id;
+            const resJson = await got.post(url, options);
+            if (resJson.body.media_id) {
+                return resJson.body.media_id;
             } else {
                 console.log(`上传文件函数出错`, JSON.stringify(resJson.body));
             }
@@ -257,22 +256,22 @@ module.exports = async () => {
     async function getAccessToken () {
         const wxTokenExp = await wxDB.get('wxTokenExp', '');
         if (!wxTokenExp || wxTokenExp < Date.now()) {
-            const url = `https://api.weixin.qq.com/cgi-bin/token?grant_type=client_credential&appid=${appID}&secret=${appSecret}`;
+            const url = `https://qyapi.weixin.qq.com/cgi-bin/gettoken?corpid=${corpId}&corpsecret=${corpSecret}`;
             try {
                 const tkJson = await got.get(url).json();
-                if (tkJson?.access_token) {
+                if (tkJson['access_token']) {
                     const expTime = Date.now() + (1.5 * 60 * 60 * 1000);
-                    await wxDB.set('wxMPToken', tkJson['access_token']);
+                    await wxDB.set('wxWorkKFToken', tkJson['access_token']);
                     await wxDB.set('wxTokenExp', expTime);
                     return tkJson.access_token;
                 } else {
                     console.log(`获取Token函数出错`, JSON.stringify(tkJson));
                 }
             } catch (e) {
-                console.error(`获取Token函数出错`,e);
+                console.error(`获取Token函数出错`, e);
             }
         } else {
-            const accessToken = await wxDB.get('wxMPToken', '');
+            const accessToken = await wxDB.get('wxWorkKFToken', '');
             return accessToken
         }
     }
