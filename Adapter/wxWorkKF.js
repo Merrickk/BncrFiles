@@ -1,12 +1,15 @@
 /**
  * @author Merrick
  * @name wxWorkKF
+ * @origin Merrick
  * @version 1.0.2
  * @description 微信客服适配器
+ * @team Merrick
  * @adapter true
  * @public true
  * @disable false
  * @priority 2
+ * @classification ["适配器"]
  * @Copyright ©2023 Merrick. All rights reserved
  */
 
