@@ -1,12 +1,15 @@
 /**
  * @author Merrick
  * @name wxMP
+ * @origin Merrick
  * @version 1.0.5
  * @description 微信公众号适配器
+ * @team Merrick
  * @adapter true
- * @public false
+ * @public true
  * @disable false
  * @priority 2
+ * @classification ["适配器"]
  * @Copyright ©2023 Merrick. All rights reserved
  */
 
@@ -19,7 +22,7 @@ v1.0.2 优化消息拉取方式，提高响应，减少错漏
 v1.0.3 1.添加关注公众号推送欢迎消息的功能，消息可以自定义
        2.优化控制台里的错误信息显示
 v1.0.4 修复了form-data方法调用的错误（可能会影响图片的获取），感谢C佬的指正
-v1.0.5 优化了网络不畅的情况下出现的重复回复、回复丢失等问题
+v1.0.5 优化消息回复方式，尝试解决网络不畅的情况下可能出现的重复回复、回复丢失等问题
 
 注意：1.适配器只提供基本功能，可以用无界的官方命令测试，其他各种插件的问题请@插件作者适配
       2.服务号消息连续回复、自定义菜单等附件功能超出了个人订阅号的权限，因无法测试暂不添加
