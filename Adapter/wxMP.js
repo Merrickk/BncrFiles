@@ -1,15 +1,12 @@
 /**
  * @author Merrick
  * @name wxMP
- * @origin Merrick
- * @version 1.0.4
+ * @version 1.0.5
  * @description 微信公众号适配器
- * @team Merrick
  * @adapter true
- * @public true
+ * @public false
  * @disable false
  * @priority 2
- * @classification ["适配器"]
  * @Copyright ©2023 Merrick. All rights reserved
  */
 
@@ -21,7 +18,8 @@ v1.0.1 1.修复回复视频出错的问题
 v1.0.2 优化消息拉取方式，提高响应，减少错漏
 v1.0.3 1.添加关注公众号推送欢迎消息的功能，消息可以自定义
        2.优化控制台里的错误信息显示
-v1.0.4 修复form-data方法调用可能引发的错误（可能会影响图片的获取），感谢C佬的指正
+v1.0.4 修复了form-data方法调用的错误（可能会影响图片的获取），感谢C佬的指正
+v1.0.5 优化了网络不畅的情况下出现的重复回复、回复丢失等问题
 
 注意：1.适配器只提供基本功能，可以用无界的官方命令测试，其他各种插件的问题请@插件作者适配
       2.服务号消息连续回复、自定义菜单等附件功能超出了个人订阅号的权限，因无法测试暂不添加
@@ -44,6 +42,8 @@ const crypto = require('crypto');
 const FormData = require('form-data');
 const xmlparser = require('express-xml-bodyparser');
 let msgQueue = [];
+let preMsg = {};
+let preReply;
 
 module.exports = async () => {
     /* 读取用户配置 */
@@ -94,16 +94,17 @@ module.exports = async () => {
     router.post('/api/bot/wxMP', async (req, res) => {
         try {
             const body = req.body.xml;
+            if (!body) return res.send('');
             const {
-                tousername: [mpId],
-                fromusername: [usrId],
-                msgtype: [msgType]
+                tousername: [mpId] = [null],
+                fromusername: [usrId] = [null],
+                msgtype: [msgType] = [null],
+                createtime: [sendTime] = [null],
+                msgid: [msgId] = [null],
+                event: [event] = [null],
+                content: [msgContent] = [null]
             } = body;
-            const msgContent = body?.content?.[0];
-            const event = body?.event?.[0];
-            const msgId = body?.msgid?.[0];
             if (botId !== mpId) await wxDB.set('wxMPBotId', mpId);
-            if (msgContent) console.log(`收到 ${usrId} 发送的公众号消息 ${msgContent}`);
             if (msgType === 'event' && event === 'subscribe') {
                 const welcomMsg = `<xml>
                     <ToUserName><![CDATA[${usrId}]]></ToUserName>
@@ -112,11 +113,9 @@ module.exports = async () => {
                     <MsgType><![CDATA[text]]></MsgType>
                     <Content><![CDATA[${welcomText}]]></Content>
                 </xml>`;
-                res.send(welcomMsg);
-                return;
+                return res.send(welcomMsg);
             } else if (msgType !== 'text') {
-                res.send('success');
-                return;
+                return res.send('success');
             }
             if (msgContent === pullMsgKeyword) {
                 const dbmsg = getReply();
@@ -132,14 +131,31 @@ module.exports = async () => {
                 msgId: msgId || '',
                 fromType: `Social`,
             };
-            msgInfo && wxMP.receive(msgInfo);
+
+            if (preMsg && preMsg.usrId === usrId && preMsg.msgContent === msgContent && sendTime === preMsg.sendTime) {
+                // 重复消息跳过
+                console.log(`收到重复请求消息 ${msgContent}`);
+                if (preReply) return res.send(preReply);
+            } else {
+                console.log(`收到 ${usrId} 发送的公众号消息 ${msgContent}`);
+                msgInfo && wxMP.receive(msgInfo);
+            }
+            preMsg = {
+                usrId: usrId,
+                msgContent: msgContent,
+                sendTime: sendTime
+            }; 
             let replyMsg;
-            for (let i=0; i<8; i++ ) {
-                replyMsg = msgQueue.shift();
+            let nowTime = Math.floor(Date.now() / 1000);
+            while (nowTime - sendTime < 15) {
+                // replyMsg = msgQueue.shift();
+                replyMsg = getReply();
                 if (replyMsg) break;
                 await sysMethod.sleep(0.5);
+                nowTime = Math.floor(Date.now() / 1000);
             }
             if (replyMsg) {
+                preReply = replyMsg;
                 res.send(replyMsg);
             } else {
                 res.send('success');
@@ -221,11 +237,15 @@ module.exports = async () => {
     function getReply() {
         const arr = [msgQueue.shift(), msgQueue.length];
         if (arr[0]) {
-            const keyStr = '<Content><![CDATA[';
-            const insertIndex = arr[0].indexOf(keyStr) + keyStr.length;
-            const insertStr = `获取到新消息，剩余消息${arr[1]}条\n\n`;
-            const reStr = arr[0].substring(0, insertIndex) + insertStr + arr[0].substring(insertIndex);
-            return reStr;
+            if (arr[1] > 0) {
+                const keyStr = '<Content><![CDATA[';
+                const insertIndex = arr[0].indexOf(keyStr) + keyStr.length;
+                const insertStr = `获取到新消息，剩余消息${arr[1]}条\n\n`;
+                const reStr = arr[0].substring(0, insertIndex) + insertStr + arr[0].substring(insertIndex);
+                return reStr;
+            } else {
+                return arr[0];
+            } 
         }
     }
 
