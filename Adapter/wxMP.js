@@ -2,7 +2,7 @@
  * @author Merrick
  * @name wxMP
  * @origin Merrick
- * @version 1.0.5
+ * @version 1.0.6
  * @description 微信公众号适配器
  * @team Merrick
  * @adapter true
@@ -23,6 +23,8 @@ v1.0.3 1.添加关注公众号推送欢迎消息的功能，消息可以自定�
        2.优化控制台里的错误信息显示
 v1.0.4 修复了form-data方法调用的错误（可能会影响图片的获取），感谢C佬的指正
 v1.0.5 优化消息回复方式，尝试解决网络不畅的情况下可能出现的重复回复、回复丢失等问题
+v1.0.6 1.修复网络不畅情况下可能出现的返回上一条回复的bug
+       2.增加消息转发功能，配置转发服务器后可以解决ip白名单的问题，配置方法详见对接教程
 
 注意：1.适配器只提供基本功能，可以用无界的官方命令测试，其他各种插件的问题请@插件作者适配
       2.服务号消息连续回复、自定义菜单等附件功能超出了个人订阅号的权限，因无法测试暂不添加
@@ -36,7 +38,9 @@ const jsonSchema = BncrCreateSchema.object({
     mpToken: BncrCreateSchema.string().setTitle('Token').setDescription(`请填入“设置与开发-基本配置”页面设置的Token`).setDefault(''),
     encodingAESKey: BncrCreateSchema.string().setTitle('EncodingAESKey').setDescription(`请填入“设置与开发-基本配置”页面获取的的EncodingAESKey`).setDefault(''),
     pullMsgKeyword: BncrCreateSchema.string().setTitle('拉取消息指令').setDescription(`自定义填写拉取消息的指令，可以获取机器人回复的多条消息`).setDefault('拉取消息'),
-    welcomText: BncrCreateSchema.string().setTitle('欢迎信息').setDescription(`设置用户第一次关注公众号时发送的欢迎信息`).setDefault('欢迎！')
+    welcomText: BncrCreateSchema.string().setTitle('欢迎信息').setDescription(`设置用户第一次关注公众号时发送的欢迎信息`).setDefault('欢迎！'),
+    useForward: BncrCreateSchema.boolean().setTitle('是否启用转发').setDescription(`设置为关则不启用`).setDefault(false),
+    forwardBaseUrl: BncrCreateSchema.string().setTitle('转发服务器地址').setDescription(`启用转发功能的时候必须设置`).setDefault(''),
 });
 /* 配置管理器 */
 const ConfigDB = new BncrPluginConfig(jsonSchema);
@@ -46,7 +50,7 @@ const FormData = require('form-data');
 const xmlparser = require('express-xml-bodyparser');
 let msgQueue = [];
 let preMsg = {};
-let preReply;
+let preReply = {};
 
 module.exports = async () => {
     /* 读取用户配置 */
@@ -64,6 +68,9 @@ module.exports = async () => {
     if (!appSecret) return console.log('未设置AppSecret');
     const pullMsgKeyword = ConfigDB.userConfig.pullMsgKeyword;
     const welcomText = ConfigDB.userConfig.welcomText;
+    const useForward = ConfigDB.userConfig.useForward;
+    const forwardBaseUrl = ConfigDB.userConfig.forwardBaseUrl;
+    if (useForward && !forwardBaseUrl) return console.log('开启转发但未设置服务器');
     //这里new的名字将来会作为 sender.getFrom() 的返回值
     const wxMP = new Adapter('wxMP');
     const wxDB = new BncrDB('wxMP');
@@ -138,7 +145,7 @@ module.exports = async () => {
             if (preMsg && preMsg.usrId === usrId && preMsg.msgContent === msgContent && sendTime === preMsg.sendTime) {
                 // 重复消息跳过
                 console.log(`收到重复请求消息 ${msgContent}`);
-                if (preReply) return res.send(preReply);
+                if (preReply && preReply.sendTime == sendTime) return res.send(preReply.replyMsg);
             } else {
                 console.log(`收到 ${usrId} 发送的公众号消息 ${msgContent}`);
                 msgInfo && wxMP.receive(msgInfo);
@@ -151,14 +158,16 @@ module.exports = async () => {
             let replyMsg;
             let nowTime = Math.floor(Date.now() / 1000);
             while (nowTime - sendTime < 15) {
-                // replyMsg = msgQueue.shift();
                 replyMsg = getReply();
                 if (replyMsg) break;
                 await sysMethod.sleep(0.5);
                 nowTime = Math.floor(Date.now() / 1000);
             }
             if (replyMsg) {
-                preReply = replyMsg;
+                preReply = {
+                    sendTime: sendTime,
+                    replyMsg: replyMsg
+                };
                 res.send(replyMsg);
             } else {
                 res.send('success');
@@ -262,14 +271,27 @@ module.exports = async () => {
             const match = mediaPath.match(/\.[^./?#]+$/);
             if (match) ext = match[0].substring(1);
             const response = await got.get(mediaPath, { responseType: 'buffer' });
-            const form = new FormData();
-            form.append('media', response.body, { filename: `media.${ext}` }); // 设置文件名
-            const formHeaders = form.getHeaders(); // 获取表单头部
-            const options = {
-                body: form,
-                headers: formHeaders,
-            };
-            const resJson = await got.post(url, options).json();
+            let resJson;
+            if (!useForward) {
+                const form = new FormData();
+                form.append('media', response.body, { filename: `media.${ext}` }); // 设置文件名
+                const formHeaders = form.getHeaders(); // 获取表单头部
+                const options = {
+                    body: form,
+                    headers: formHeaders,
+                };
+                resJson = await got.post(url, options).json();
+            } else {
+                const forwardUrl = `${forwardBaseUrl}/api/fwd-wxmp?access_token=${accessToken}&type=${mediaType}`;
+                const options = {
+                    json: {
+                        fileBuffer: response.body.toString('base64'),
+                        fileName: `media.${ext}`,
+                        fileType: mediaType
+                    }
+                };
+                resJson = await got.post(forwardUrl, options).json();
+            }
             if (resJson?.media_id) {
                 return resJson.media_id;
             } else {
@@ -283,7 +305,12 @@ module.exports = async () => {
     async function getAccessToken () {
         const wxTokenExp = await wxDB.get('wxTokenExp', '');
         if (!wxTokenExp || wxTokenExp < Date.now()) {
-            const url = `https://api.weixin.qq.com/cgi-bin/token?grant_type=client_credential&appid=${appID}&secret=${appSecret}`;
+            let url;
+            if (!useForward) {
+                url = `https://api.weixin.qq.com/cgi-bin/token?grant_type=client_credential&appid=${appID}&secret=${appSecret}`;
+            } else {
+                url = `${forwardBaseUrl}/api/fwd-wxmp?appid=${appID}&secret=${appSecret}`
+            }
             try {
                 const tkJson = await got.get(url).json();
                 if (tkJson?.access_token) {
