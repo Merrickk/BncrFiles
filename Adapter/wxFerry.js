@@ -17,8 +17,10 @@
 v1.0.0 本适配器基于三藏大佬的wechatFerry适配器修改，大佬的订阅地址 https://github.com/3zang/Bncr_plugins
        主要基于Windows下的wechatFerry适配（项目地址：https://github.com/lich0821/wcf-client-rust），并增加了如下功能：
        1.消息体添加用户名
-       2.收到好友请求通知管理员（原作者删除了自动通过好友的接口）
+       2.收到好友请求通知管理员（原作者删除了自动通过好友的接口，暂时曲线一下）
        3.邀请进群（支持多个群）
+v1.0.1 1.修复了好友请求通知管理员开关无效的bug
+       2.新增设置添加好友后的欢迎词功能
 */
 
 // Web界面配置
@@ -30,6 +32,7 @@ const jsonSchema = BCS.object({
     fileServer: BCS.string().setTitle('文件服务器地址').setDescription(`文件服务器部署的地址`).setDefault(''),
     // addFriend: BncrCreateSchema.boolean().setTitle('自动同意添加好友请求').setDescription(`设置为关则不开启自动同意好友请求`).setDefault(false),
     // addFriendCode: BncrCreateSchema.string().setTitle('自动同意好友暗号').setDescription(`设置为空则同意所有好友请求`).setDefault(''),
+    addFriendWelcome: BCS.string().setTitle('添加好友后的欢迎词').setDescription('留空则不回复').setDefault(''),
     inviteStr: BCS.string().setTitle('邀请进群配置参数').setDescription('请按“邀请暗号&邀请群号&进群方式&备注”的样式填写邀请进群参数，进群方式“0”为拉人进群，“1”为邀请进群,多个群用“|”分隔').setDefault(''),
 });
 const ConfigDB = new BncrPluginConfig(jsonSchema);
@@ -45,6 +48,8 @@ module.exports = async () => {
     let fileServer = ConfigDB.userConfig.fileServer;
     if (fileServer) fileServer += fileServer.endsWith('/') ? '' : '/';
     const inviteStr = ConfigDB.userConfig.inviteStr;
+    const addFriend = ConfigDB.userConfig.addFriend;
+    const addFriendWelcome = ConfigDB.userConfig.addFriendWelcome;
     // 创建适配器
     const wxFerry = new Adapter('wxFerry');
     new BncrDB('wxFerry');
@@ -76,7 +81,7 @@ module.exports = async () => {
             const body = req.body;
             // console.log('body', body);
             // 收到好友请求通知管理员
-            if (body.type === 37) {
+            if (body.type === 37 && addFriend) {
                 let code = null;
                 const xmlParser = new xml2js.Parser();
                 xmlParser.parseString(body.content, (err, result) => {
@@ -94,6 +99,16 @@ module.exports = async () => {
             // 添加好友后刷新好友列表
             if (body.type === 10000) {
                 await getContacts();
+                if (addFriendWelcome !== '') {
+                    let welcomeStr = addFriendWelcome.replace(/\n/g, '\r');
+                    await requestFerry({
+                        receiver: body.sender,
+                        aters: '',
+                        msg: welcomeStr,
+                        api: 'text',
+                        msgId: '',
+                    })
+                }
             }
             // 自动同意加好友 预留备用
             // if (body.type === 37) {
@@ -236,6 +251,7 @@ module.exports = async () => {
             const resp = await got.post(wxFerryUrl + body.api, {
                 json: body,
             });
+            console.log('wxFerry回复消息:', resp.body);
             return resp.body;
         } catch (e) {
             console.error('wxFerry发送请求出错', e);
