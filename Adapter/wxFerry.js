@@ -3,7 +3,7 @@
  * @name wxFerry
  * @origin Merrick
  * @team Merrick
- * @version 1.0.0
+ * @version 1.0.1
  * @description wechatFerry适配器
  * @adapter true
  * @public true
@@ -96,7 +96,7 @@ module.exports = async () => {
                     msg: `收到微信好友添加请求，请求信息：${code}`
                 });
             }
-            // 添加好友后刷新好友列表
+            // 添加好友后刷新好友列表并回复欢迎词
             if (body.type === 10000) {
                 await getContacts();
                 if (addFriendWelcome !== '') {
