@@ -251,7 +251,6 @@ module.exports = async () => {
             const resp = await got.post(wxFerryUrl + body.api, {
                 json: body,
             });
-            console.log('wxFerry回复消息:', resp.body);
             return resp.body;
         } catch (e) {
             console.error('wxFerry发送请求出错', e);
