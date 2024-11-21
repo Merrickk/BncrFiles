@@ -3,7 +3,7 @@
  * @name wxFerry
  * @origin Merrick
  * @team Merrick
- * @version 1.0.1
+ * @version 1.0.2
  * @description wechatFerry适配器
  * @adapter true
  * @public true
@@ -21,6 +21,7 @@ v1.0.0 本适配器基于三藏大佬的wechatFerry适配器修改，大佬的�
        3.邀请进群（支持多个群）
 v1.0.1 1.修复了好友请求通知管理员开关无效的bug
        2.新增设置添加好友后的欢迎词功能
+v1.0.2 增加通过好友的判断条件，防止出现莫名发送欢迎词的情况
 */
 
 // Web界面配置
@@ -97,7 +98,7 @@ module.exports = async () => {
                 });
             }
             // 添加好友后刷新好友列表并回复欢迎词
-            if (body.type === 10000) {
+            if (body.type === 10000 && (body.content.includes('You have added') || body.content.includes('你已添加'))) {
                 await getContacts();
                 if (addFriendWelcome !== '') {
                     let welcomeStr = addFriendWelcome.replace(/\n/g, '\r');
