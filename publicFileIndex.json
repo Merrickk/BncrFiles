@@ -154,6 +154,28 @@
     "id": "7Z6H0SOpmv3v7wXvkc7CTaXPw3c=",
     "isChatPlugin": true
   },
+  "yk+jWuoVfKfzGLG5ONppH+DgBnA=": {
+    "type": "github",
+    "name": "PushMessage",
+    "author": "Merrick",
+    "team": "Merrick",
+    "version": "1.0.0",
+    "description": "推送消息到指定的群组",
+    "classification": [
+      "插件"
+    ],
+    "filename": "PushMessage.js",
+    "fileDir": "/plugins/Merrick/PushMessage.js",
+    "systemVersionRange": "",
+    "isCron": false,
+    "isAdapter": false,
+    "isMod": false,
+    "isService": false,
+    "isAuthentication": false,
+    "isEncPlugin": true,
+    "id": "yk+jWuoVfKfzGLG5ONppH+DgBnA=",
+    "isChatPlugin": true
+  },
   "iE19XaJwuzlvYARa1bFz43pjfHg=": {
     "type": "github",
     "name": "千寻微信辅助",
