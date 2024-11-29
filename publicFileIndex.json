@@ -132,6 +132,28 @@
     "id": "HdQnUqI8kdQLRxnpZ6QvGdCB61I=",
     "isChatPlugin": true
   },
+  "IwIeUBVuUnmQ0wnEU9xjgKwDxfU=": {
+    "type": "github",
+    "name": "CleanPluginsDB",
+    "author": "Merrick",
+    "team": "Merrick",
+    "version": "1.0.0",
+    "description": "清理数据库中无效的插件配置数据",
+    "classification": [
+      "插件"
+    ],
+    "filename": "CleanPluginsDB.js",
+    "fileDir": "/plugins/Merrick/CleanPluginsDB.js",
+    "systemVersionRange": "",
+    "isCron": false,
+    "isAdapter": false,
+    "isMod": false,
+    "isService": false,
+    "isAuthentication": false,
+    "isEncPlugin": true,
+    "id": "IwIeUBVuUnmQ0wnEU9xjgKwDxfU=",
+    "isChatPlugin": true
+  },
   "7Z6H0SOpmv3v7wXvkc7CTaXPw3c=": {
     "type": "github",
     "name": "Gemini",
