@@ -110,6 +110,28 @@
     "id": "lSWnQO/Zr5hSNz9D/V2lZShxpNE=",
     "isChatPlugin": false
   },
+  "PPGNHjxErDMVJNmJP7MDQT28eso=": {
+    "type": "github",
+    "name": "BackupDB",
+    "author": "Merrick",
+    "team": "Merrick",
+    "version": "1.0.0",
+    "description": "备份和恢复无界数据库",
+    "classification": [
+      "插件"
+    ],
+    "filename": "BackupDB.js",
+    "fileDir": "/plugins/Merrick/BackupDB.js",
+    "systemVersionRange": "",
+    "isCron": false,
+    "isAdapter": false,
+    "isMod": false,
+    "isService": false,
+    "isAuthentication": false,
+    "isEncPlugin": true,
+    "id": "PPGNHjxErDMVJNmJP7MDQT28eso=",
+    "isChatPlugin": true
+  },
   "HdQnUqI8kdQLRxnpZ6QvGdCB61I=": {
     "type": "github",
     "name": "ChatGPT",
@@ -137,7 +159,7 @@
     "name": "CleanPluginsDB",
     "author": "Merrick",
     "team": "Merrick",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "description": "清理数据库中无效的插件配置数据",
     "classification": [
       "插件"
