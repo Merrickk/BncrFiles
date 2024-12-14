@@ -159,7 +159,7 @@
     "name": "CleanPluginsDB",
     "author": "Merrick",
     "team": "Merrick",
-    "version": "1.0.1",
+    "version": "1.0.2",
     "description": "清理数据库中无效的插件配置数据",
     "classification": [
       "插件"
