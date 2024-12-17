@@ -2,7 +2,7 @@
  * @author Merrick
  * @name wxMP
  * @origin Merrick
- * @version 1.0.6
+ * @version 1.0.7
  * @description 微信公众号适配器
  * @team Merrick
  * @adapter true
@@ -25,6 +25,8 @@ v1.0.4 修复了form-data方法调用的错误（可能会影响图片的获取�
 v1.0.5 优化消息回复方式，尝试解决网络不畅的情况下可能出现的重复回复、回复丢失等问题
 v1.0.6 1.修复网络不畅情况下可能出现的返回上一条回复的bug
        2.增加消息转发功能，配置转发服务器后可以解决ip白名单的问题，配置方法详见对接教程
+v1.0.7 1.新增多条文本消息一次性拉取功能，默认开启，可在配置界面关闭
+       2.优化拉取消息时的提示
 
 注意：1.适配器只提供基本功能，可以用无界的官方命令测试，其他各种插件的问题请@插件作者适配
       2.服务号消息连续回复、自定义菜单等附件功能超出了个人订阅号的权限，因无法测试暂不添加
@@ -38,6 +40,7 @@ const jsonSchema = BncrCreateSchema.object({
     mpToken: BncrCreateSchema.string().setTitle('Token').setDescription(`请填入“设置与开发-基本配置”页面设置的Token`).setDefault(''),
     encodingAESKey: BncrCreateSchema.string().setTitle('EncodingAESKey').setDescription(`请填入“设置与开发-基本配置”页面获取的的EncodingAESKey`).setDefault(''),
     pullMsgKeyword: BncrCreateSchema.string().setTitle('拉取消息指令').setDescription(`自定义填写拉取消息的指令，可以获取机器人回复的多条消息`).setDefault('拉取消息'),
+    isSinglePull: BncrCreateSchema.boolean().setTitle('是否单条拉取消息').setDescription(`设置为关则不启用，即一次拉取多条消息`).setDefault(false),
     welcomText: BncrCreateSchema.string().setTitle('欢迎信息').setDescription(`设置用户第一次关注公众号时发送的欢迎信息`).setDefault('欢迎！'),
     useForward: BncrCreateSchema.boolean().setTitle('是否启用转发').setDescription(`设置为关则不启用`).setDefault(false),
     forwardBaseUrl: BncrCreateSchema.string().setTitle('转发服务器地址').setDescription(`启用转发功能的时候必须设置`).setDefault(''),
@@ -48,6 +51,7 @@ const got = require('got');
 const crypto = require('crypto');
 const FormData = require('form-data');
 const xmlparser = require('express-xml-bodyparser');
+const xml2js = require('xml2js');
 let msgQueue = [];
 let preMsg = {};
 let preReply = {};
@@ -71,6 +75,7 @@ module.exports = async () => {
     const useForward = ConfigDB.userConfig.useForward;
     const forwardBaseUrl = ConfigDB.userConfig.forwardBaseUrl;
     if (useForward && !forwardBaseUrl) return console.log('开启转发但未设置服务器');
+    const isSingle = ConfigDB.userConfig.isSinglePull;
     //这里new的名字将来会作为 sender.getFrom() 的返回值
     const wxMP = new Adapter('wxMP');
     const wxDB = new BncrDB('wxMP');
@@ -89,7 +94,6 @@ module.exports = async () => {
             const sha1 = crypto.createHash('sha1');
             sha1.update(list.join(''));
             const hashcode = sha1.digest('hex');
-            // console.log("handle/GET func: hashcode, signature: ", hashcode, signature);
             if (hashcode === signature) {
                 return res.send(echostr);
             } else {
@@ -128,8 +132,18 @@ module.exports = async () => {
                 return res.send('success');
             }
             if (msgContent === pullMsgKeyword) {
-                const dbmsg = getReply();
-                if (dbmsg) return res.send(dbmsg);
+                const dbmsg = await getReply();
+                if (dbmsg) {
+                    return res.send(dbmsg);
+                } else {
+                    return res.send(`<xml>
+                        <ToUserName><![CDATA[${usrId}]]></ToUserName>
+                        <FromUserName><![CDATA[${botId}]]></FromUserName>
+                        <CreateTime>${Date.now()}</CreateTime>
+                        <MsgType><![CDATA[text]]></MsgType>
+                        <Content><![CDATA[没有新消息]]></Content>
+                    </xml>`);
+                }
             }
             msgQueue = [];
             let msgInfo = {
@@ -142,10 +156,9 @@ module.exports = async () => {
                 fromType: `Social`,
             };
 
-            if (preMsg && preMsg.usrId === usrId && preMsg.msgContent === msgContent && sendTime === preMsg.sendTime) {
+            if (preMsg.usrId === usrId && preMsg.msgContent === msgContent && sendTime === preMsg.sendTime) {
                 // 重复消息跳过
-                console.log(`收到重复请求消息 ${msgContent}`);
-                if (preReply && preReply.sendTime == sendTime) return res.send(preReply.replyMsg);
+                if (preReply.sendTime == sendTime) return res.send(preReply.replyMsg);
             } else {
                 console.log(`收到 ${usrId} 发送的公众号消息 ${msgContent}`);
                 msgInfo && wxMP.receive(msgInfo);
@@ -158,7 +171,7 @@ module.exports = async () => {
             let replyMsg;
             let nowTime = Math.floor(Date.now() / 1000);
             while (nowTime - sendTime < 15) {
-                replyMsg = getReply();
+                replyMsg = await getReply();
                 if (replyMsg) break;
                 await sysMethod.sleep(0.5);
                 nowTime = Math.floor(Date.now() / 1000);
@@ -246,18 +259,61 @@ module.exports = async () => {
 
     return wxMP;
 
-    function getReply() {
-        const arr = [msgQueue.shift(), msgQueue.length];
-        if (arr[0]) {
-            if (arr[1] > 0) {
-                const keyStr = '<Content><![CDATA[';
-                const insertIndex = arr[0].indexOf(keyStr) + keyStr.length;
-                const insertStr = `获取到新消息，剩余消息${arr[1]}条\n\n`;
-                const reStr = arr[0].substring(0, insertIndex) + insertStr + arr[0].substring(insertIndex);
-                return reStr;
+    async function getReply() {
+        if (msgQueue.length === 1) {
+            return msgQueue.shift();
+        } else if (msgQueue.length !== 0) {
+            let resObj = await xmlToJs(msgQueue.shift());
+            if (resObj.MsgType[0] !== 'text') return objToXml(resObj);
+            if (isSingle) {
+                resObj.Content[0] = `有新消息，剩余消息 ${msgQueue.length} 条\n~~~~~~~~~~~~~~~~~~~~~~\n` + resObj.Content[0] + `\n~~~~~~~~~~~~~~~~~~~~~~`;
+                return objToXml(resObj);
             } else {
-                return arr[0];
-            } 
+                let msgCount = 1;
+                while (msgQueue.length > 0) {
+                    let tmpObj = await xmlToJs(msgQueue.shift());
+                    if (tmpObj.MsgType[0] !== 'text')  {
+                        msgQueue.unshift(objToXml(tmpObj));
+                        break;
+                    }
+                    msgCount++;
+                    resObj.Content[0] += `\n~~~~~~~~第 ${msgCount} 条~~~~~~~~\n` + tmpObj.Content[0];
+                }
+                let headerContent = `获取消息 ${msgCount} 条`;
+                if (msgQueue.length !== 0) headerContent += `，剩余消息 ${msgQueue.length} 条`;
+                headerContent += `\n~~~~~~~~第 1 条~~~~~~~~\n`;
+                resObj.Content[0] = headerContent + resObj.Content[0] + `\n~~~~~~~~~~~~~~~~~~~~~~~`;
+                return objToXml(resObj);
+            }
+        }
+
+        function objToXml(obj) {
+            const builder = new xml2js.Builder({
+                renderOpts: { 'pretty': true, 'indent': '  ', 'newline': '\n' },
+                cdata: true,
+            });
+            const xml = builder.buildObject({xml: obj});
+            return xml;
+        }
+    }
+
+    // function xmlToJs(xml) {
+    //     xml2js.parseString(xml, (err, result) => {
+    //         if (err) {
+    //             console.error("解析失败:", err);
+    //             return;
+    //         }
+    //         return result.xml;
+    //     });
+    // }
+
+    async function xmlToJs(xml) {
+        try {
+            const result = await xml2js.parseStringPromise(xml);
+            return result.xml;
+        } catch (err) {
+            console.error("解析失败:", err);
+            return null;
         }
     }
 
