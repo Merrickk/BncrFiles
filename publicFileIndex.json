@@ -27,7 +27,7 @@
     "name": "wxMP",
     "author": "Merrick",
     "team": "Merrick",
-    "version": "1.0.6",
+    "version": "1.0.7",
     "description": "微信公众号适配器",
     "classification": [
       "适配器"
