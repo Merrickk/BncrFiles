@@ -108,12 +108,12 @@ module.exports = async () => {
           }
           // console.log(msgContent);
           if (eventkeyinfos.indexOf(msgContent) != -1) {
-            var msgType = 'text';
             for (const eventinfo of events) {
               const eventkey = eventinfo.rule.eventkey;
               const msgkey = eventinfo.rule.msgkey;
               if (eventkey && msgkey) {
                 if (eventkey === msgContent) {
+                  var msgType = 'text';
                   var msgContent = msgkey;
                 }
               }
