@@ -1,7 +1,7 @@
 /**
  * @author Merrick
  * @name wxWork
- * @version 1.0.3
+ * @version 1.0.4
  * @description 企业微信适配器
  * @team Merrick
  * @adapter true
@@ -16,6 +16,7 @@
 v1.0.1 修复bug，适配无界2.0 WEB界面，增加markdown、voice格式支持，在部分节点增加log输出，方便排查
 v1.0.2 适配3.0
 v1.0.3 菜单点击事件支持，先在“企业微信-机器人-应用管理-自定义菜单”定义好菜单，对话窗口点击根据提示填写相关配置；支持图文同时发送
+v1.0.4 修复菜单点击事件
 */
 
 
@@ -96,6 +97,16 @@ module.exports = async () => {
           } = msgJson;
           const events = ConfigDB.userConfig.event?.filter(o => o.enable) || [];
           const eventkeyinfos = events.map(v => { return v.rule.eventkey }) || [];
+          // console.log(eventkeyinfos);
+          let msgContents = [];
+          if (msgContent) {
+            msgContents = msgContent.split('#');
+            if (msgContents.length = 4) {
+              msgContent = msgContents.slice(0, -1).join('#');
+              msgId = msgId + '_' +msgContent[3];
+            }
+          }
+          // console.log(msgContent);
           if (eventkeyinfos.indexOf(msgContent) != -1) {
             var msgType = 'text';
             for (const eventinfo of events) {
