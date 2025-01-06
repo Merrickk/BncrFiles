@@ -125,9 +125,10 @@ module.exports = async () => {
             res.send('');
             return;
           }
+        } else {
+          res.send('');
+          return;
         }
-        // res.send('');
-        // return;
       } else {
         var {
           Content: [msgContent],
@@ -156,6 +157,7 @@ module.exports = async () => {
       res.send('');
     } catch (e) {
       console.error('接收消息模块出错', e);
+      console.error('接收消息模块出错的msgJson', msgJson);
       res.send('');
     }
   });
