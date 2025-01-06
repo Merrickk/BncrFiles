@@ -103,7 +103,7 @@ module.exports = async () => {
             msgContents = msgContent.split('#');
             if (msgContents.length = 4) {
               msgContent = msgContents.slice(0, -1).join('#');
-              msgId = msgId + '_' +msgContent[3];
+              msgId = msgId + '_' + msgContents[3];
             }
           }
           // console.log(msgContent);
