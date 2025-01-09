@@ -5,7 +5,7 @@
  * @description 企业微信适配器
  * @team Merrick
  * @adapter true
- * @public false
+ * @public true
  * @disable false
  * @priority 2
  * @classification ["适配器"]
