@@ -5,7 +5,7 @@
  * @description 企业微信适配器
  * @team Merrick
  * @adapter true
- * @public true
+ * @public false
  * @disable false
  * @priority 2
  * @classification ["适配器"]
@@ -257,7 +257,7 @@ module.exports = async () => {
           msgIds.push(await sendMsg(bodytxt));
         }
         // console.log('返回的msgid', msgId);
-        if (msgIds) {
+        if (msgIds.length) {
           return msgIds;
         } else {
           return msgId;
