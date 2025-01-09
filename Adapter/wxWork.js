@@ -257,7 +257,7 @@ module.exports = async () => {
           msgIds.push(await sendMsg(bodytxt));
         }
         // console.log('返回的msgid', msgId);
-        if (msgIds) {
+        if (msgIds.length) {
           return msgIds;
         } else {
           return msgId;
